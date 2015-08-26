@@ -13,37 +13,10 @@ import System.Exit
 import System.Environment (getArgs)
 import System.IO
 
-invite = intercalate "\n" ["BEGIN:VCALENDAR",
-                           "PRODID:-//Google Inc//Google Calendar 70.9054//EN",
-                           "VERSION:2.0",
-                           "CALSCALE:GREGORIAN",
-                           "METHOD:REQUEST",
-                           "BEGIN:VEVENT",
-                           "DTSTART:20150902T120000Z",
-                           "DTEND:20150902T140000Z",
-                           "DTSTAMP:20150820T124425Z",
-                           "ORGANIZER;CN=Carsten Bormann:mailto:cabocabo@gmail.com",
-                           "UID:C08F26B2-E8D5-4DC5-8625-B21B173F4D08",
-                           "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=",
-                           " TRUE;CN=Lars Fischer;X-NUM-GUESTS=0:mailto:fischer@wiwi.uni-siegen.de",
-                           "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE",
-                           " ;CN=Carsten Bormann;X-NUM-GUESTS=0:mailto:cabocabo@gmail.com",
-                           "CREATED:20150820T124424Z",
-                           "DESCRIPTION:View your event at https://www.google.com/calendar/event?action",
-                           " =VIEW&eid=XzhjbzNnaGhpNnAxMzRiYTU3MTIzYWI5azhoMWphYjlvNm9wM2FiYTI2OG9rNGM5b",
-                           " jZkMzM4aDFnNzAgZmlzY2hlckB3aXdpLnVuaS1zaWVnZW4uZGU&tok=MTgjY2Fib2NhYm9AZ21h",
-                           " aWwuY29tMzQ4ZjEzMDY0N2JiZGY3MDVjNjg2MTIxZDAzOWVjODBiZjQ3NDQxMw&ctz=UTC&hl=e",
-                           " n.",
-                           "LAST-MODIFIED:20150820T124425Z",
-                           "LOCATION:MZH5180",
-                           "SEQUENCE:0",
-                           "STATUS:CONFIRMED",
-                           "SUMMARY:Lars Fischer/cabo",
-                           "TRANSP:OPAQUE",
-                           "END:VEVENT", 
-                           "END:VCALENDAR"]
 
 
+{-| Call taskharrier <file.ics> 
+|-}
 -- Todo: collect annotations
 main = getArgs >>= (return.head) >>= readFile >>=
        (\vcal -> case parseICalendar (def::DecodingFunctions) "stdin" (B.pack vcal) of
