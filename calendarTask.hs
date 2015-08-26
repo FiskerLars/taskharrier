@@ -1,12 +1,15 @@
 import Text.Printf
 import Data.Time
+import Control.Monad
 import Data.Maybe
 import Data.List
 import Text.ICalendar
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Default
 import qualified Data.Map.Lazy as M
-
+import qualified Data.Text.Lazy as T
+import System.Process (system)
+import System.Exit
 
 invite = intercalate "\n" ["BEGIN:VCALENDAR",
                            "PRODID:-//Google Inc//Google Calendar 70.9054//EN",
@@ -39,25 +42,45 @@ invite = intercalate "\n" ["BEGIN:VCALENDAR",
                            "END:VCALENDAR"]
 
 
--- Todo: read from stdin
--- Todo: execute task
--- Todo: gather summary+location as description
 -- Todo: collect annotations
-main = case parseICalendar (def::DecodingFunctions) "stdin" (B.pack invite ) of
-  Right ((cal:_), _) -> putStrLn
-                        $ intercalate "\n"
-                        $ M.foldr (\a -> (:) (fromMaybe "noEvent" $ veTaskAddStr a ))
-                        [] (vcEvents cal) 
-  Left err -> putStrLn err
+main = getContents >>=
+       (\vcal -> case parseICalendar (def::DecodingFunctions) "stdin" (B.pack vcal) of
+         Right ((cal:_), _) -> return
+                               $ intercalate "\n"
+                               $ M.foldr (\a -> (:) (veTaskAddStr a ))
+                               [] (vcEvents cal) 
+         Left err -> error err
+       ) >>=
+       --        askUser >>=
+       system >>=
+       (\ret -> case ret of
+         ExitSuccess     -> return ()
+         ExitFailure err -> error $ "Failure " ++ (show err)
+       )
+
+-- FIXME: cannot read a second time from stdin
+askUser:: String -> IO String
+askUser s =  putStrLn ("execute\n"++ s ++ "\n(y/N)")
+             >> getChar
+             >>= (\res -> 
+                   case res of
+                   'y'       -> return s
+                   otherwise -> error "User abort"
+                 )
+
+veTaskAddStr:: VEvent -> String
+veTaskAddStr e = intercalate " " 
+                 $ catMaybes
+                 [ Just "task add"
+                 , ((veDTStart e >>= (return.dtStartDateTimeValue)) >>= (return.veTaskTime))
+                 , Just "--"
+                 , (veSummary e >>= (return.(T.unpack).summaryValue))
+                 , (veLocation e >>= (return.(T.unpack).locationValue))
+                 ]  
 
 
-
-veTaskAddStr:: VEvent -> Maybe String
-veTaskAddStr = (>>= return.((++) "task add ").veTaskTime).(>>= return.dtStartDateTimeValue).veDTStart
-
-
-cet = TimeZone 1 False "CET"
-cest = TimeZone 2 True "CEST"
+cet = TimeZone 60 False "CET"
+cest = TimeZone 120 True "CEST"
 
 veTaskTime:: DateTime -> String
 veTaskTime dt = (++) "rc.datetime:Y-M-DTH:N:S due:"
