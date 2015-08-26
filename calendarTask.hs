@@ -10,6 +10,8 @@ import qualified Data.Map.Lazy as M
 import qualified Data.Text.Lazy as T
 import System.Process (system)
 import System.Exit
+import System.Environment (getArgs)
+import System.IO
 
 invite = intercalate "\n" ["BEGIN:VCALENDAR",
                            "PRODID:-//Google Inc//Google Calendar 70.9054//EN",
@@ -43,7 +45,7 @@ invite = intercalate "\n" ["BEGIN:VCALENDAR",
 
 
 -- Todo: collect annotations
-main = getContents >>=
+main = getArgs >>= (return.head) >>= readFile >>=
        (\vcal -> case parseICalendar (def::DecodingFunctions) "stdin" (B.pack vcal) of
          Right ((cal:_), _) -> return
                                $ intercalate "\n"
@@ -51,10 +53,15 @@ main = getContents >>=
                                [] (vcEvents cal) 
          Left err -> error err
        ) >>=
-       --        askUser >>=
+       askUser >>=
        system >>=
        (\ret -> case ret of
-         ExitSuccess     -> return ()
+         ExitSuccess     -> getChar >> putStrLn "(press return)"
+                            >> getChar -- fixme
+                            >>= waiter
+                            where
+                              waiter a | a == 'x' = return ()
+                                       | otherwise = putStrLn " "
          ExitFailure err -> error $ "Failure " ++ (show err)
        )
 
